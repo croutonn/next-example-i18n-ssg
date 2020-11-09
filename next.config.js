@@ -13,6 +13,15 @@ module.exports = {
       resourceDir: i18n.resourceDir,
     },
   },
+  redirects: async () => {
+    return [
+      {
+        source: '/ja',
+        destination: '/',
+        permanent: true,
+      },
+    ]
+  },
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // eslint-disable-next-line no-param-reassign
