@@ -4,7 +4,7 @@ import { NextPage, GetStaticProps } from 'next'
 import Head from 'next/head'
 import { Trans } from 'react-i18next'
 
-import { loadResources } from '@/lib/i18n'
+import { getI18nStaticProps } from '@/lib/i18n'
 import { PageProps } from '@/types'
 import { Locale } from '@/types/i18n'
 
@@ -234,24 +234,11 @@ const Home: NextPage<HomeProps> = () => {
   )
 }
 
-const createGetStaticProps = (
-  locale?: Locale
-): GetStaticProps<HomeProps, HomeParams> => async () => {
-  const i18nResource = await loadResources({
-    locale,
+const getStaticProps: GetStaticProps<HomeProps, HomeParams> = async (context) =>
+  getI18nStaticProps({
+    locale: context.params?.locale as Locale,
     namespaces: ['common', 'home'],
   })
 
-  const props: HomeProps = {
-    i18n: i18nResource,
-  }
-
-  return {
-    props,
-  }
-}
-
-const getStaticProps = createGetStaticProps()
-
 export default Home
-export { getStaticProps, createGetStaticProps }
+export { getStaticProps }

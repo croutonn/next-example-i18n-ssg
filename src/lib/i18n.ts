@@ -1,11 +1,13 @@
 import { promises } from 'fs'
 import { resolve } from 'path'
+import { ParsedUrlQuery } from 'querystring'
 
 import i18n, { Resource, ResourceKey } from 'i18next'
+import { GetStaticPathsResult } from 'next'
 import getConfig from 'next/config'
 import { initReactI18next } from 'react-i18next'
 
-import { PublicRuntimeConfig, ServerRuntimeConfig } from '@/types'
+import { PageProps, PublicRuntimeConfig, ServerRuntimeConfig } from '@/types'
 import { Locale } from '@/types/i18n'
 
 i18n
@@ -136,5 +138,55 @@ const loadResources = async (options: {
   }
 }
 
+const getI18nStaticProps = async ({
+  locale,
+  namespaces,
+  noMinify,
+}: Parameters<typeof loadResources>[0]): Promise<{ props: PageProps }> => {
+  const i18nResource = await loadResources({
+    locale,
+    namespaces,
+    noMinify,
+  })
+
+  const props: PageProps = {
+    i18n: i18nResource,
+  }
+
+  return {
+    props,
+  }
+}
+
+const getI18nStaticPaths = <P extends ParsedUrlQuery>(
+  staticPaths?: GetStaticPathsResult<P>
+): GetStaticPathsResult<P & { locale: Locale }> => {
+  const {
+    publicRuntimeConfig: { i18n: i18nPublicConfig },
+  } = getConfig<PublicRuntimeConfig>()
+
+  if (staticPaths) {
+    return {
+      paths: staticPaths.paths
+        .map((staticPath) =>
+          i18nPublicConfig.locales.map((locale) => ({
+            params: (typeof staticPath === 'string'
+              ? { locale }
+              : { ...staticPath.params, locale }) as P & { locale: Locale },
+          }))
+        )
+        .flat(),
+      fallback: staticPaths.fallback,
+    }
+  }
+
+  return {
+    paths: i18nPublicConfig.locales.map((locale) => ({
+      params: { locale } as P & { locale: Locale },
+    })),
+    fallback: false,
+  }
+}
+
 export default i18n
-export { loadResources, routeToLocale }
+export { getI18nStaticProps, getI18nStaticPaths, loadResources, routeToLocale }
