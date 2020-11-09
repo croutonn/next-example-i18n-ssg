@@ -34,6 +34,7 @@ const routeToLocale = (route: string): Locale => {
 const loadResources = async (options: {
   locale?: Locale
   namespaces?: string[]
+  noMinify?: boolean
 }): Promise<Resource> => {
   const {
     publicRuntimeConfig: { i18n: i18nPublicConfig },
@@ -41,6 +42,7 @@ const loadResources = async (options: {
   } = getConfig<PublicRuntimeConfig, ServerRuntimeConfig>()
   const locale = options.locale || i18nPublicConfig.defaultLocale
   const namespaces = options.namespaces || i18nServerConfig.defaultNamespaces
+  const noMinify = options.noMinify === true
   const { defaultLocale } = i18nPublicConfig
   const isDefaultLocale = locale === defaultLocale
   const locales = Array.from(new Set([locale, defaultLocale]))
@@ -109,21 +111,24 @@ const loadResources = async (options: {
         },
       }
     }, {} as Resource)
-  Object.keys(fallbackResource[defaultLocale]).forEach((namespace) => {
-    const resourceKeys = localeResource[locale][namespace]
-    const fallbackResourceKeys = fallbackResource[defaultLocale][namespace]
-    if (
-      typeof resourceKeys === 'string' ||
-      typeof fallbackResourceKeys === 'string'
-    ) {
-      return
-    }
-    Object.keys(fallbackResourceKeys).forEach((key) => {
-      if (Object.prototype.hasOwnProperty.call(resourceKeys, key)) {
-        delete fallbackResourceKeys[key]
+
+  if (!noMinify) {
+    Object.keys(fallbackResource[defaultLocale]).forEach((namespace) => {
+      const resourceKeys = localeResource[locale][namespace]
+      const fallbackResourceKeys = fallbackResource[defaultLocale][namespace]
+      if (
+        typeof resourceKeys === 'string' ||
+        typeof fallbackResourceKeys === 'string'
+      ) {
+        return
       }
+      Object.keys(fallbackResourceKeys).forEach((key) => {
+        if (Object.prototype.hasOwnProperty.call(resourceKeys, key)) {
+          delete fallbackResourceKeys[key]
+        }
+      })
     })
-  })
+  }
 
   return {
     ...localeResource,
